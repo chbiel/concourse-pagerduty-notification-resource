@@ -23,6 +23,8 @@ Additionally the following parameters can be set:
 * `generate_dedub_key`: *Optional.* Set to any value to enable generation of `dedup_key` parameter. 
 The value will be set to `BUILD_PIPELINE_NAME + _ + BUILD_JOB_NAME`.
 
+* `routing_key`: *Required.* Worth to mention as this is the integration key from PagerDuty which is somd kind of a secret and should be treated like this.
+
 * `event_action`: *Required.* Worth to mention as this parameter will be used to determine which kind of event will be send to the PagerDuty API.
 
 ## Example
@@ -42,17 +44,17 @@ resources:
     debug: true
 
 jobs:
-- name: teams-notification
+- name: failing
   serial: true
   on_failure:
     do:
     - put: pd-alarm
       params:
-        routing_key: 'integration_key',
-        event_action: 'trigger',
+        routing_key: secret_integration_key
+        event_action: trigger
         summary: 'my cool alarm'
-        source: 'some test resource',
-        severity: 'error
+        source: 'some test resource'
+        severity: error
         custom_details:
             something: 'anything'
 
