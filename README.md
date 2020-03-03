@@ -47,16 +47,16 @@ jobs:
 - name: failing
   serial: true
   on_failure:
-    do:
-    - put: pd-alarm
-      params:
-        routing_key: secret_integration_key
-        event_action: trigger
-        summary: 'my cool alarm'
-        source: 'some test resource'
-        severity: error
-        custom_details:
-            something: 'anything'
+    put: pd-alarm
+    params:
+      generate_dedub_key: true
+      routing_key: secret_integration_key
+      event_action: trigger
+      summary: 'my cool alarm'
+      source: 'some test resource'
+      severity: error
+      custom_details:
+        something: 'anything'
 
   plan:
   - task: fail
