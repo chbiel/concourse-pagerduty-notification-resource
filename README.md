@@ -57,6 +57,12 @@ jobs:
       severity: error
       custom_details:
         something: 'anything'
+  on_success:
+    put: pd-alarm
+    params:
+      generate_dedub_key: true
+      routing_key: secret_integration_key
+      event_action: resolve
 
   plan:
   - task: fail
