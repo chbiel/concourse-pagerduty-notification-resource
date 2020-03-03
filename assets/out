@@ -74,6 +74,9 @@ def send_acknowledge_resolve(payload):
     }
     pd_request = {}
 
+    if 'generate_dedub_key' in params:
+        params['dedup_key'] = os.environ["BUILD_PIPELINE_NAME"] + '_' + os.environ["BUILD_JOB_NAME"]
+
     for p in required_params:
         if p not in params:
             print("Required param '%s' not found in params" % p, file=sys.stderr)
@@ -109,6 +112,9 @@ try:
     if 'source' in c_payload:
         if 'debug' in c_payload['source']:
             debug = True
+
+    if debug:
+        print("Payload:\n%s" % c_payload, file=sys.stderr)
 
     if 'event_action' in c_payload['params']:
         event_action = c_payload['params']['event_action']
