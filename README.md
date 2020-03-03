@@ -1,6 +1,8 @@
-# concourse-pagerduty-notificaton-resource
+# concourse-pagerduty-notification-resource
 
 Send events to PagerDuty Events API v2.
+
+Docker Hub: https://hub.docker.com/r/chbiel/concourse-pagerduty-notification-resource
 
 ## Source Configuration
 
