@@ -1,0 +1,132 @@
+#!/usr/bin/python3
+
+import sys
+import json
+import requests
+import os
+
+debug = False
+
+
+def send_trigger(payload):
+    required_params = ['routing_key', 'event_action', 'summary', 'source', 'severity']
+    optional_params = ['dedup_key', 'timestamp', 'component', 'group', 'class', 'custom_details', 'images', 'links']
+    payload_params = ['summary', 'source', 'severity', 'timestamp', 'component', 'group', 'class', 'custom_details']
+
+    params = payload['params']
+    pd_headers = {
+        "Accept": "*/*",
+        "Content-Type": "application/json"
+    }
+    pd_payload = {}
+    pd_request = {}
+
+    for p in required_params:
+        if p not in params:
+            print("Required param '%s' not found in params" % p, file=sys.stderr)
+            sys.exit(1)
+        else:
+            if p in payload_params:
+                pd_payload[p] = params[p]
+            else:
+                pd_request[p] = params[p]
+
+    for p in optional_params:
+        if p in params:
+            pd_payload[p] = params[p]
+
+    if 'generate_dedub_key' in params:
+        pd_request['dedup_key'] = os.environ["BUILD_PIPELINE_NAME"] + '_' + os.environ["BUILD_JOB_NAME"]
+
+    if 'custom_details' not in pd_payload:
+        pd_payload['custom_details'] = {}
+
+    pd_payload['custom_details']['build_id'] = os.environ["BUILD_ID"]
+    pd_payload['custom_details']['job_name'] = os.environ["BUILD_JOB_NAME"]
+    pd_payload['custom_details']['pipeline_name'] = os.environ["BUILD_PIPELINE_NAME"]
+
+    pd_request['payload'] = pd_payload
+
+    if debug:
+        print("Request:\n%s" % pd_request, file=sys.stderr)
+
+    try:
+        response = requests.post("https://events.pagerduty.com/v2/enqueue", data=json.dumps(pd_request), headers=pd_headers)
+    except requests.exceptions.RequestException as e:  # This is the correct syntax
+        print(e, file=sys.stderr)
+        sys.exit(1)
+
+    if debug:
+        print("Response:\n%s" % response.json(), file=sys.stderr)
+
+    if response.status_code != 202:
+        print("Error when reaching out to pagerduty", file=sys.stderr)
+        sys.exit(1)
+
+
+def send_acknowledge_resolve(payload):
+    required_params = ['routing_key', 'event_action', 'dedup_key']
+
+    params = payload['params']
+    pd_headers = {
+        "Accept": "*/*",
+        "Content-Type": "application/json"
+    }
+    pd_request = {}
+
+    for p in required_params:
+        if p not in params:
+            print("Required param '%s' not found in params" % p, file=sys.stderr)
+            sys.exit(1)
+        else:
+            pd_request[p] = params[p]
+
+    if debug:
+        print("Request:\n%s" % pd_request, file=sys.stderr)
+
+    try:
+        response = requests.post("https://events.pagerduty.com/v2/enqueue", data=json.dumps(pd_request), headers=pd_headers)
+    except requests.exceptions.RequestException as e:  # This is the correct syntax
+        print(e, file=sys.stderr)
+        sys.exit(1)
+
+    if debug:
+        print("Response:\n%s" % response.json(), file=sys.stderr)
+
+    if response.status_code != 202:
+        print("Error when reaching out to pagerduty", file=sys.stderr)
+        sys.exit(1)
+
+
+try:
+    msg = sys.stdin.readlines()
+    raw_json = ""
+    for line in msg:
+        raw_json += line.rstrip()
+
+    c_payload = json.loads(raw_json)
+
+    if 'source' in c_payload:
+        if 'debug' in c_payload['source']:
+            debug = True
+
+    if 'event_action' in c_payload['params']:
+        event_action = c_payload['params']['event_action']
+        if event_action == 'trigger':
+            send_trigger(c_payload)
+        elif event_action == 'acknowledge':
+            send_acknowledge_resolve(c_payload)
+        elif event_action == 'resolve':
+            send_acknowledge_resolve(c_payload)
+        else:
+            print('event_action "%s" not recognized' % event_action, file=sys.stderr)
+            sys.exit(1)
+    else:
+        print('event_action not set!', file=sys.stderr)
+        sys.exit(1)
+
+except Exception as e:
+    print(e, file=sys.stderr)
+    sys.exit(1)
+
+print('{"version":{"ref":"none"}}')
