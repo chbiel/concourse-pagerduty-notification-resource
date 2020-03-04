@@ -74,7 +74,7 @@ def send_acknowledge_resolve(payload):
     }
     pd_request = {}
 
-    if 'generate_dedub_key' in params:
+    if 'generate_dedup_key' in params:
         params['dedup_key'] = os.environ["BUILD_PIPELINE_NAME"] + '_' + os.environ["BUILD_JOB_NAME"]
 
     for p in required_params:
@@ -109,7 +109,7 @@ try:
 
     c_payload = json.loads(raw_json)
 
-    if 'source' in c_payload:
+    if 'source' in c_payload and c_payload['source'] is not None:
         if 'debug' in c_payload['source']:
             debug = True
 
@@ -118,6 +118,7 @@ try:
 
     if 'event_action' in c_payload['params']:
         event_action = c_payload['params']['event_action']
+
         if event_action == 'trigger':
             send_trigger(c_payload)
         elif event_action == 'acknowledge':
@@ -132,7 +133,9 @@ try:
         sys.exit(1)
 
 except Exception as e:
-    print(e, file=sys.stderr)
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    print(e, exc_type, fname, exc_tb.tb_lineno, file=sys.stderr)
     sys.exit(1)
 
 print('{"version":{"ref":"none"}}')
