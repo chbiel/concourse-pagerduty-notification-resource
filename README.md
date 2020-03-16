@@ -28,6 +28,9 @@ The value will be set to `BUILD_PIPELINE_NAME + _ + BUILD_JOB_NAME`.
 * `routing_key`: *Required.* Worth to mention as this is the integration key from PagerDuty which is somd kind of a secret and should be treated like this.
 
 * `event_action`: *Required.* Worth to mention as this parameter will be used to determine which kind of event will be send to the PagerDuty API.
+    * `trigger`: will trigger an alarm
+    * `acknowledge`: will acknowledge an alarm by dedup_key
+    * `resolve`: will resolve an alarm by dedup_key
 
 ## Example
 
